@@ -34,20 +34,24 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   deleteTask(task: Task): void {
-    this.tasksService.deleteTask(task).subscribe(() => {
-      this.tasks = this.tasks.filter((t) => t.id !== task.id);
-    });
+    this.subscriptions$.add(
+      this.tasksService.deleteTask(task).subscribe(() => {
+        this.tasks = this.tasks.filter((t) => t.id !== task.id);
+      })
+    );
   }
 
   toggleReminder(task: Task): void {
     task.reminder = !task.reminder;
-    this.tasksService.updateTask(task).subscribe();
+    this.subscriptions$.add(this.tasksService.updateTask(task).subscribe());
   }
 
   addTask(task: Task): void {
-    this.tasksService.addTask(task).subscribe((task) => {
-      this.tasks.push(task);
-    });
+    this.subscriptions$.add(
+      this.tasksService.addTask(task).subscribe((task) => {
+        this.tasks.push(task);
+      })
+    );
   }
 
   ngOnDestroy(): void {
