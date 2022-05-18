@@ -1,6 +1,14 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
-import { TaskService } from './../../services/task.service';
+import { AppState } from '../../state/app.state';
+import {
+  addTask,
+  loadTasks,
+  removeTask,
+  updateTask,
+} from '../../state/task/task.actions';
+import { selectAllTasks } from '../../state/task/task.selectors';
 import { UiService } from './../../services/ui.service';
 import { Task } from './../../Task';
 
@@ -14,14 +22,13 @@ export class TasksComponent implements OnInit, OnDestroy {
   showAddTask: boolean = false;
   private subscriptions$: Subscription = new Subscription();
 
-  constructor(
-    private tasksService: TaskService,
-    private uiService: UiService
-  ) {}
+  constructor(private uiService: UiService, private store: Store<AppState>) {}
 
   ngOnInit(): void {
+    this.store.dispatch(loadTasks());
+
     this.subscriptions$.add(
-      this.tasksService.getTasks().subscribe((tasks: Task[]): void => {
+      this.store.select(selectAllTasks).subscribe((tasks: Task[]) => {
         this.tasks = tasks;
       })
     );
@@ -34,24 +41,17 @@ export class TasksComponent implements OnInit, OnDestroy {
   }
 
   deleteTask(task: Task): void {
-    this.subscriptions$.add(
-      this.tasksService.deleteTask(task).subscribe(() => {
-        this.tasks = this.tasks.filter((t) => t.id !== task.id);
-      })
-    );
+    this.store.dispatch(removeTask({ id: task.id }));
   }
 
   toggleReminder(task: Task): void {
-    task.reminder = !task.reminder;
-    this.subscriptions$.add(this.tasksService.updateTask(task).subscribe());
+    this.store.dispatch(
+      updateTask({ task: { ...task, reminder: !task.reminder } })
+    );
   }
 
   addTask(task: Task): void {
-    this.subscriptions$.add(
-      this.tasksService.addTask(task).subscribe((task) => {
-        this.tasks.push(task);
-      })
-    );
+    this.store.dispatch(addTask({ task }));
   }
 
   ngOnDestroy(): void {
